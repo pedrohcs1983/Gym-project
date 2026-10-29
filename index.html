@@ -1689,7 +1689,7 @@ function onIn(el,ev){
   if(f==='note'){s.exs[s.cur.e].note=val;save({sess:s.id});return}
   if(f==='snotes'){s.notes=val;save({sess:s.id});return}
   const st=curSet(s)[1];st[f]=val===''?'':n0(val);if(st[f]===null)st[f]='';save({sess:s.id});return}
- if(p[0]==='mf'){U.modal.f=U.modal.f||{};const f=p[1];U.modal.f[f]=el.type==='checkbox'?el.checked:(el.type==='number'?val:val);if(ch||el.type==='checkbox'||el.type==='time'||el.type==='date')render();return}
+ if(p[0]==='mf'){U.modal.f=U.modal.f||{};const f=p[1];U.modal.f[f]=el.type==='checkbox'?el.checked:(el.type==='number'?val:val);if(ch||el.type==='checkbox'||el.type==='time'||el.type==='date'||f==='word')render();return}
  if(p[0]==='per'){U.per[p[1]]=val;if(ch)render();return}
  switch(k){
   case'catQ':U.catQ=val;break;case'histQ':U.histQ=val;break;case'catMine':U.catMine=!!val;break;case'catFav':U.catFav=!!val;break;
