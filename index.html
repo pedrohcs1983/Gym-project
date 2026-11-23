@@ -1017,7 +1017,7 @@ function vOnb(){
   +'<label class="f">Nome ou apelido<input type="text" id="onb-name" data-in="onb:name" value="'+esc(d.name||'')+'" maxlength="24" autocomplete="off"></label>'
   +'<div class="grid3"><label class="f">Idade<input type="number" inputmode="numeric" id="onb-age" data-in="onb:age" value="'+esc(d.age||'')+'" min="10" max="99"></label><label class="f">Altura (cm)<input type="number" inputmode="numeric" id="onb-h" data-in="onb:height" value="'+esc(d.height||'')+'" min="100" max="230"></label><label class="f">Peso (kg)<input type="number" inputmode="decimal" id="onb-w" data-in="onb:weight" value="'+esc(d.weight||'')+'" min="25" max="300" step="0.1"></label></div>'
   +'<div class="col"><span class="lab">Experiência com musculação</span>'+EXPS.map(e=>'<button type="button" class="panel flat" style="text-align:left;cursor:pointer;color:inherit;'+(d.exp===e[0]?'border-color:var(--accent2)':'')+'" data-act="onbExp" data-v="'+e[0]+'" aria-pressed="'+(d.exp===e[0])+'"><b class="disp">'+e[1]+'</b><div class="small dim">'+e[2]+'</div></button>').join('')+'</div>'
-  +(d.age&&d.age<18?'<div class="note">Para menores de 18 anos, o Sistema não define metas de calorias nem de emagrecimento e esconde medidas corporais. Treine com orientação de um responsável e de um profissional.</div>':'')
+  +'<div id="onb-minor">'+minorNoteH(d.age)+'</div>'
   +'<div class="row"><button class="btn ghost" data-act="onbBack">Voltar</button><button class="btn pri grow" data-act="onbNext">Continuar</button></div>'}
  if(st===2){h='<h2>Objetivo e disponibilidade</h2>'
   +'<div class="col"><span class="lab">Objetivo principal</span>'+chipSet(GOALS,[d.goal],'onbGoal')+'</div>'
@@ -1646,10 +1646,11 @@ function shopFrom(id){const i=IDEAS.find(x=>x.id===id);if(!i)return;i.ing.forEac
 
 /* ============ ENTRADAS ============ */
 const NUMF=['age','height','weight'];
+const minorNoteH=a=>(a&&Number(a)<18)?'<div class="note">Para menores de 18 anos, o Sistema não define metas de calorias nem de emagrecimento e esconde medidas corporais. Treine com orientação de um responsável e de um profissional.</div>':'';
 function onIn(el,ev){
  const k=el.dataset.in;const val=el.type==='checkbox'?el.checked:el.value;const ch=ev.type==='change';
  const p=k.split(':');
- if(p[0]==='onb'){const d=U.onb.d,f=p[1];if(f==='minutes'){d.minutes=Number(val);const l=$('#onb-min-v');if(l)l.textContent=d.minutes+' min';return}d[f]=val;if(f==='consent'||f==='age')render();return}
+ if(p[0]==='onb'){const d=U.onb.d,f=p[1];if(f==='minutes'){d.minutes=Number(val);const l=$('#onb-min-v');if(l)l.textContent=d.minutes+' min';return}d[f]=val;if(f==='age'){const mn=document.getElementById('onb-minor');if(mn)mn.innerHTML=minorNoteH(val);return}if(f==='consent')render();return}
  if(p[0]==='pf'){const e=U.edit,f=p[1];if(f==='minutes'){e.minutes=Number(val);if(ch)render();return}e[f]=val;return}
  if(p[0]==='np'){U.modal.minutes=Number(val);if(ch)render();return}
  if(p[0]==='set'){const f=p[1];
