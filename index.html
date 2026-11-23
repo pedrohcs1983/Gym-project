@@ -865,7 +865,7 @@ function evaluate(){
  S.challenges.forEach(c=>{const st=chalState(c);if(!st.done&&st.n>=st.goal)award(st.key,st.def.xp,st.def.n+' concluído','desafio')});
  syncProgress()}
 
-/* ============ ATRIBUTOS, PERÍODOS, MENTOR ============ */
+/* ============ ATRIBUTOS, PERÍODOS ============ */
 function attrs(){
  const m=X();const t=today();const from28=addD(t,-27);
  const prs=S.prs.filter(p=>!p.base).length;
@@ -1073,7 +1073,7 @@ function vPainel(){
  h+='<div class="panel col"><div class="pt"><h4>Evolução recente</h4><button class="btn sm ghost" data-act="tab" data-v="evolucao">Ver tudo</button></div>'
   +(last?'<div class="item"><div class="grow"><div class="t">'+esc(last.wname)+'</div><div class="small dim">'+br(last.date)+' · '+(last.doneSets||0)+' séries · '+fnum(sessionVol(last))+' kg de volume</div></div></div>':'<div class="small dim">Nenhum treino concluído ainda. Sua primeira sessão aparece aqui.</div>')
   +(lp?'<div class="item"><div class="grow"><div class="t">Recorde: '+esc(lp.name)+'</div><div class="small dim">'+fnum(lp.kg,1)+' kg × '+lp.reps+' · '+br(lp.date)+'</div></div><span class="pill ok">PR</span></div>':'')+'</div>';
- // mentor
+ // análise por regras
  const ins=insights().slice(0,3);
  h+='<div class="panel col"><div class="pt"><h4>Análise do Sistema</h4><span class="tag-m">automática</span></div>'+ins.map(i=>'<div class="col" style="gap:2px"><p class="small">'+esc(i.txt)+'</p><details><summary>Por quê?</summary><div class="in">'+esc(i.why)+'</div></details></div>').join('')+'<p class="tiny faint">Análise por regras sobre os seus registros. Não é uma IA conversacional nem aconselhamento profissional.</p></div>';
  return h}
@@ -1288,8 +1288,8 @@ function nRecup(){
 function perRange(){const k=U.per.k;if(k==='custom'&&U.per.a&&U.per.b&&U.per.a<=U.per.b)return[U.per.a,U.per.b];const n=k==='custom'?30:Number(k);return[addD(today(),-(n-1)),today()]}
 function delta(a,b,u){if(!b)return '<span class="faint">—</span>';const p=Math.round((a-b)/b*100);return '<span style="color:'+(p>=0?'var(--good)':'var(--dim)')+'">'+(p>=0?'+':'')+p+'%</span>'}
 function vEvo(){
- let h='<h2>Evolução</h2>'+subs('evo',[['geral','Geral'],['cargas','Cargas'],['recordes','Recordes'],['corpo','Medidas'],['atividade','Atividade'],['mentor','Mentor']]);
- const s=U.sub.evo;h+=s==='geral'?eGeral():s==='cargas'?eCargas():s==='recordes'?eRec():s==='corpo'?eCorpo():s==='atividade'?eAtiv():eMentor();return h}
+ let h='<h2>Evolução</h2>'+subs('evo',[['geral','Geral'],['cargas','Cargas'],['recordes','Recordes'],['corpo','Medidas'],['atividade','Atividade']]);
+ const s=U.sub.evo;h+=s==='geral'?eGeral():s==='cargas'?eCargas():s==='recordes'?eRec():s==='corpo'?eCorpo():eAtiv();return h}
 function eGeral(){
  const[a,b]=perRange();const days=diffD(a,b)+1;const pa=addD(a,-days),pb=addD(a,-1);const A=periodStats(a,b),B=periodStats(pa,pb);
  let h='<div class="panel col"><div class="chips">'+[['7','7 dias'],['30','30 dias'],['90','3 meses'],['180','6 meses'],['custom','Personalizado']].map(x=>'<button class="chip" aria-pressed="'+(U.per.k===x[0])+'" data-act="per" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>'
@@ -1345,23 +1345,6 @@ function eAtiv(){
  const L=S.tx.slice().sort((a,b)=>b.ts-a.ts).slice(0,60);
  let h='<div class="panel col"><div class="pt"><h3>Histórico de XP</h3><span class="small dim num">Total: '+fnum(X().xp)+' XP</span></div>'+(L.length?L.map(t=>'<div class="item"><div class="grow"><div class="t">'+esc(t.why)+'</div><div class="tiny faint">'+new Date(t.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' · '+(TXL[t.type]||t.type)+'</div></div><span class="xp">+'+t.amt+'</span></div>').join(''):empty('bolt','Sem XP ainda','Conclua um treino ou uma missão para registrar a primeira transação.'))+'</div>';
  h+='<div class="panel col"><h4>Histórico de níveis e ranks</h4>'+S.lvlH.slice().reverse().slice(0,12).map(l=>'<div class="small">'+new Date(l.ts).toLocaleDateString('pt-BR')+' · nível '+l.lvl+'</div>').join('')+S.rankH.slice().reverse().map(r=>'<div class="small" style="color:var(--accent2)">'+new Date(r.ts).toLocaleDateString('pt-BR')+' · rank '+RANKS[r.i].k+' ('+RANKS[r.i].n+')</div>').join('')+'</div>';return h}
-function eMentor(){
- if(!U.sample)return '<div class="panel col"><h3>Mentor</h3><p class="small dim">O Mentor com IA só funciona quando o app é aberto dentro do Claude. Fora dele não há servidor nem chave de IA conectados, e o Sistema não simula isso. As análises automáticas por regras continuam no Painel e na Revisão da semana.</p></div>';
- let h='<div class="panel col"><h3>Mentor do Sistema</h3><p class="small dim">Converse sobre treino, exercícios, substituições, refeições simples e leitura dos seus registros. O Mentor usa o Claude e só recebe um resumo dos seus dados se você autorizar abaixo.</p>'
- +'<label class="chk"><input type="checkbox" id="mn-ok" data-in="mnOk" '+(U.mnOk?'checked':'')+'> Autorizo enviar um resumo dos meus registros de treino, sono e hidratação (sem nome, idade, peso nem alimentos)</label>'
- +'<label class="f">Sua pergunta<textarea id="mn-q" data-in="mnQ" placeholder="Ex.: por que o sistema sugeriu manter a carga no supino?">'+esc(U.mnQ||'')+'</textarea></label>'
- +'<div class="chips">'+['Resuma minha semana','Como posso trocar um exercício que me incomoda?','Ideias de lanche simples antes do treino'].map(x=>'<button class="chip" data-act="mnPick" data-v="'+esc(x)+'">'+esc(x)+'</button>').join('')+'</div>'
- +'<button class="btn pri" data-act="mnAsk" '+(U.busy?'disabled':'')+'>'+(U.busy?'Pensando…':'Perguntar')+'</button></div>';
- if(U.mnErr)h+='<div class="errbox">'+esc(U.mnErr)+'</div>';
- if(U.mnA)h+='<div class="panel col hot"><h4>Resposta</h4><div class="small" style="white-space:pre-wrap">'+esc(U.mnA)+'</div><p class="tiny faint">Gerado por IA a partir do que foi enviado. Pode errar e não substitui profissional de saúde. Dor, lesão ou sintoma preocupante: pare e procure avaliação.</p></div>';
- return h}
-function mentorContext(){
- const m=X(),t=today();const A=periodStats(addD(t,-6),t),B=periodStats(addD(t,-13),addD(t,-7));
- const lines=['Plano atual: '+(S.plan?SPLITS[S.plan.split].n+', '+S.plan.days.length+' dias/semana, treinos: '+S.plan.workouts.map(w=>w.name+' ['+w.exs.map(i=>EX[i.ex].n+' '+i.sets+'x'+i.rmin+'-'+i.rmax).join('; ')+']').join(' | '):'nenhum'),
-  'Treinos concluídos no total: '+m.done.length+'. Últimos 7 dias: '+A.sessions+' treinos, '+A.sets+' séries, volume '+Math.round(A.vol)+' kg. 7 dias anteriores: '+B.sessions+' treinos, volume '+Math.round(B.vol)+' kg.',
-  'Sono médio 7 dias: '+(A.sleep?A.sleep.toFixed(1)+' h em '+A.sleepN+' noites':'sem registros')+'. Água média: '+(A.water?Math.round(A.water)+' ml em '+A.waterN+' dias':'sem registros')+'.',
-  'Últimas sessões: '+m.done.slice(-4).map(s=>s.date+' '+s.wname+' ('+s.exs.filter(e=>e.sets.some(x=>x.done)).map(e=>e.name+' '+e.sets.filter(x=>x.done).map(x=>(n0(x.kg)||0)+'x'+n0(x.reps)+(x.rpe?'@'+x.rpe:'')).join(',')).join('; ')+')').join(' || ')];
- return lines.join('\n')}
 
 /* ============ MISSÕES ============ */
 function vMiss(){
@@ -1417,7 +1400,7 @@ function vPerfil(){
  h+='<div class="panel col"><h3>Avisos e instalação</h3><p class="small dim">Os avisos funcionam com o app aberto ou em segundo plano no aparelho. Sem um servidor de notificações, eles não chegam com o app fechado.</p><div class="row"><span class="small">Notificações: <b>'+({granted:'ativadas',denied:'bloqueadas no navegador',default:'desativadas',unsupported:'não suportadas aqui'}[np])+'</b></span>'+(np==='default'?'<button class="btn sm" data-act="notifOn">Ativar</button>':'')+'</div>'
  +'<label class="f">Lembrete de água (8h às 21h)<select id="st-remind" data-in="set:remind">'+[[0,'Desligado'],[60,'A cada 1 hora'],[90,'A cada 1h30'],[120,'A cada 2 horas']].map(x=>'<option value="'+x[0]+'" '+(Number(S.set.remind)===x[0]?'selected':'')+'>'+x[1]+'</option>').join('')+'</select></label>'
  +(U.inst?'<button class="btn" data-act="install">Instalar como app</button>':'')+(!window.claude?'<p class="tiny faint">No iPhone: toque em Compartilhar e depois em Adicionar à Tela de Início. No Android e no computador, use o botão Instalar quando ele aparecer.</p>':'')+'</div>';
- h+='<div class="panel col"><h3>Dados e privacidade</h3><p class="small dim">Seus registros ficam em um espaço privado da sua conta, que nem o dono do artefato nem outras pessoas leem, e em uma cópia neste navegador. Estado: <b id="sy2">'+(SYTXT[SY.status]||SYTXT.local)[1]+'</b>. Sem integração com IA, exceto o Mentor, e só com a sua autorização a cada uso. Corpo, fotos e medidas não são compartilhados.</p><div class="row"><button class="btn" data-act="export">Exportar dados (JSON)</button><button class="btn" data-act="importOpen">Importar</button><button class="btn bad" data-act="wipeOpen">Apagar tudo</button></div></div>';
+ h+='<div class="panel col"><h3>Dados e privacidade</h3><p class="small dim">Seus registros ficam em um espaço privado da sua conta, que nem o dono do artefato nem outras pessoas leem, e em uma cópia neste navegador. Estado: <b id="sy2">'+(SYTXT[SY.status]||SYTXT.local)[1]+'</b>. Sem integração com IA. Corpo, fotos e medidas não são compartilhados.</p><div class="row"><button class="btn" data-act="export">Exportar dados (JSON)</button><button class="btn" data-act="importOpen">Importar</button><button class="btn bad" data-act="wipeOpen">Apagar tudo</button></div></div>';
  h+='<div class="panel col"><h3>Sobre esta versão</h3><p class="small dim">Funciona de verdade: perfil, planos, modo treino com retomada, XP sem duplicidade, níveis, ranks, missões, desafios, conquistas, diário alimentar, hidratação, sono, recuperação, gráficos e recordes.</p><p class="small dim"><b>Não incluído:</b> lembretes e notificações com o app fechado, fotos de progresso, leitura de código de barras, estimativa de refeição por foto, ilustrações dos exercícios e integração com plataformas de saúde. Nenhum deles está simulado.</p><p class="tiny faint">O Sistema apoia hábitos e não substitui médico, nutricionista ou educador físico. Sem promessa de resultado.</p></div>';
  return h}
 /* ============ MODAIS ============ */
@@ -1525,14 +1508,6 @@ function importGo(){
   Object.values(o.sessions||{}).forEach(s=>{if(!s||!Array.isArray(s.exs))throw new Error('x')});
   const n=normalize(o);n._u=Date.now();S=n;ver++;memo.ver=-1;U.edit=null;lsWrite();markAll();U.modal=null;U.importErr='';evaluate();render();if(SY.root)schedFlush();toast('good','Dados importados','Seus registros foram substituídos.','check')
  }catch(e){U.importErr='Esse texto não é um arquivo válido do Level Up System. Cole o conteúdo completo de uma exportação.';render()}}
-async function mnAsk(){
- if(!U.mnOk){toast('warn','Autorização necessária','Marque a autorização para o Mentor usar o resumo dos seus registros.','alert');return}
- const q=(U.mnQ||'').trim();if(!q){toast('warn','Escreva uma pergunta','','alert');return}
- U.busy=true;U.mnErr='';U.mnA='';render();
- const prompt='Você é o Mentor do LEVEL UP SYSTEM, um app de treino gamificado. Responda em português do Brasil, de forma direta (no máximo 180 palavras), apoiando-se SOMENTE nos dados abaixo e em conhecimento geral de treino. Regras: não invente registros; se faltar dado, diga isso; não diagnostique lesões; não indique medicamentos ou suplementos; não sugira metas de calorias nem dietas restritivas; se houver dor, mande parar o exercício e procurar um profissional; priorize técnica, descanso e progressão gradual; explique o porquê das recomendações.\n\nDADOS AUTORIZADOS PELO USUÁRIO:\n'+mentorContext()+'\n\nPERGUNTA: '+q;
- try{const r=await U.sample([{role:'user',content:prompt}],{cache:false});U.mnA=r.text||'Sem resposta.'}
- catch(e){U.mnErr=e&&e.code==='not_granted'?'Você não autorizou o uso do Claude nesta página.':e&&e.code==='rate_limited'?'Muitas perguntas seguidas. Espere um pouco e tente de novo.':'Não consegui falar com o Mentor agora. Tente novamente em instantes.'}
- U.busy=false;render()}
 
 function act(el,ev){
  const a=el.dataset.act,v=el.dataset.v;
@@ -1650,9 +1625,7 @@ function act(el,ev){
  case'measOpen':openModal({t:'measure',f:{d:today()}});break;
  case'measSave':{const f=U.modal.f;const o={id:uid('me'),d:f.d||today()};['weight','waist','chest','arm','thigh'].forEach(k=>o[k]=n0(f[k]));if(!['weight','waist','chest','arm','thigh'].some(k=>o[k]!=null)){toast('warn','Nada informado','Preencha ao menos uma medida.','alert');return}S.measures.push(o);U.modal=null;save();render();break}
  case'measDel':S.measures=S.measures.filter(x=>x.id!==v);save();render();break;
- case'mnPick':U.mnQ=v;render();break;
- case'mnAsk':mnAsk();break;
- /* missões */
+   /* missões */
  case'chalStart':S.challenges.push({id:v,start:today()});toast('good',CHAL[v].n,'Começou hoje.','trophy');commit();break;
  /* estilo */
  case'cosTitle':S.cos.title=v;save();render();break;
@@ -1694,7 +1667,7 @@ function onIn(el,ev){
  switch(k){
   case'catQ':U.catQ=val;break;case'histQ':U.histQ=val;break;case'catMine':U.catMine=!!val;break;case'catFav':U.catFav=!!val;break;
   case'ideaHave':U.ideaHave=val;break;case'ideaAll':U.ideaAll=!!val;break;case'shopNew':U.shopNew=val;return;
-  case'mnQ':U.mnQ=val;return;case'mnOk':U.mnOk=!!val;return;case'evEx':U.evEx=val;break;
+  case'evEx':U.evEx=val;break;
   case'mq':U.modal.q=val;break;case'mg':U.modal.g=val;break;case'swApply':U.modal.apply=!!val;return;
  }
  render()}
@@ -1752,7 +1725,6 @@ function afterLoad(){memo.ver=-1;U.edit=null}
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)try{wakeSync()}catch(e){}});
  setInterval(remindTick,60000);
  initSync().then(()=>{paintSync()}).catch(()=>{});
- try{window.claude&&window.claude.use&&window.claude.use('sample').then(s=>{U.sample=s;if(U.tab==='evo'&&U.sub.evo==='mentor')render()}).catch(()=>{})}catch(e){}
 })();
 
 </script>
